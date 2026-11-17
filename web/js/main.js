@@ -5,15 +5,21 @@ import { getTheme } from '../data/themes.js';
 import { createGameController } from './ui/main-game.js';
 import { homeScreen, settleScreen, statsScreen, applyThemeVars } from './ui/screens.js';
 import { setSfxEnabled, setBgmEnabled, isBgmOn } from './audio.js';
+import { createSession } from './engine/douzero.js';
 
 const store = createStore(defaultStorage());
 const app = document.querySelector('#app');
 let currentController = null;
+let currentSession = null;
 
 function destroyController() {
   if (currentController) {
     currentController.destroy();
     currentController = null;
+  }
+  if (currentSession) {
+    currentSession.dispose();
+    currentSession = null;
   }
 }
 
@@ -59,6 +65,12 @@ function startGame({ level = 'normal', themeId = 'green', recorder = true, saved
       if (parsed && parsed.phase !== 'settle') initialState = parsed;
     } catch (e) { /* 存档损坏按新局处理 */ }
   }
+  // hard 档:懒加载 DouZero 会话(Worker 优先三级降级;?nomodel=1 测试钩子强制不可用)
+  if (level === 'hard' && !new URLSearchParams(location.search).has('nomodel')) {
+    try {
+      currentSession = createSession();
+    } catch (e) { currentSession = null; }
+  }
   currentController = createGameController({
     container: app,
     level,
@@ -66,6 +78,7 @@ function startGame({ level = 'normal', themeId = 'green', recorder = true, saved
     store,
     recorderVisible: recorder,
     initialState,
+    session: currentSession,
     bgmOn: isBgmOn(),
     onToggleBgm: (next) => {
       setBgmEnabled(next);

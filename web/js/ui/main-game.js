@@ -16,6 +16,7 @@ export function createGameController({
   let state = null;
   let timer = null;
   let destroyed = false;
+  let sessionBroken = false; // 强 AI 失败过一次后不再重试,本局降 normal
   const ui = {
     selected: new Set(), eventText: '', errorText: '',
     lastPlays: {}, recorderVisible,
@@ -104,11 +105,13 @@ export function createGameController({
         let cards;
         if (moves.length === 0) {
           cards = [];
-        } else if (session && level === 'hard') {
+        } else if (session && level === 'hard' && !sessionBroken) {
           try {
             cards = (await session.pickMove(state, seat, moves)).cards;
           } catch (e) {
-            cards = choosePlay(state, seat, { level: aiLevel(), rng }); // 降级兜底
+            sessionBroken = true;
+            ui.eventText = '强 AI 不可用,已降级普通 AI';
+            cards = choosePlay(state, seat, { level: aiLevel(), rng });
           }
         } else {
           cards = choosePlay(state, seat, { level: aiLevel(), rng });
@@ -175,14 +178,14 @@ export function createGameController({
     applyMove(0, selected);
   }
 
-  // 提示:当前对局最高引擎推荐(easy/normal 用规则 AI;hard 局由 session 接管,Task 15)
+  // 提示:当前对局最高引擎推荐(easy/normal 用规则 AI;hard 局由 session 接管)
   async function humanHint() {
     if (state.phase !== 'play' || state.turn !== 0) return;
     let suggestion = null;
-    if (session && level === 'hard') {
+    if (session && level === 'hard' && !sessionBroken) {
       const moves = legalMoves(state, 0);
       if (moves.length > 0) {
-        try { suggestion = (await session.pickMove(state, 0, moves)).cards; } catch (e) { /* 降级 */ }
+        try { suggestion = (await session.pickMove(state, 0, moves)).cards; } catch (e) { sessionBroken = true; }
       }
     }
     if (!suggestion) {

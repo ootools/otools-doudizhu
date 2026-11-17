@@ -13,3 +13,4 @@ import './store.test.js';
 import './recorder.test.js';
 import './encode.test.js';
 import './conformance.test.js';
+import './douzero-session.test.js';

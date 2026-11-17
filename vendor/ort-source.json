@@ -2,6 +2,10 @@
   "package": "onnxruntime-web",
   "version": "1.22.0",
   "source": "otools/otools-draftcalc node_modules(npm registry 快照)",
-  "files": ["ort.wasm.min.mjs", "ort-wasm-simd-threaded.wasm"],
+  "files": [
+    "ort.wasm.min.mjs",
+    "ort-wasm-simd-threaded.mjs",
+    "ort-wasm-simd-threaded.wasm"
+  ],
   "usage": "ort.env.wasm.wasmPaths 指向 web/vendor/ort/;wasm SIMD 单线程(宿主 webview 未开 COOP/COEP)"
 }
