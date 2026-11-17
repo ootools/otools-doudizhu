@@ -60,3 +60,74 @@ button.primary {
   color: #17211a;
   font-weight: 600;
 }
+
+/* ---- 牌桌 ---- */
+.table {
+  display: flex; flex-direction: column;
+  height: 100vh; min-height: 560px;
+  background: radial-gradient(ellipse at center, var(--felt), var(--felt-deep, #175233));
+}
+
+.table-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 14px 4px; gap: 8px; }
+.table-mid { text-align: center; flex: 1; }
+.bottom-label { font-size: 12px; color: var(--text-dim); }
+.bottom-row { display: flex; gap: 4px; justify-content: center; margin-top: 2px; }
+.multiplier { font-size: 13px; color: var(--accent); margin-top: 4px; }
+
+.player { min-width: 130px; }
+.player-name { font-size: 13px; color: var(--text-dim); margin-bottom: 4px; }
+.player-name.active { color: var(--accent); font-weight: 700; }
+
+.table-center { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; min-height: 80px; }
+.play { min-height: 56px; display: flex; align-items: center; }
+.event-bubble { flex: 1; text-align: center; color: var(--accent); font-size: 14px; padding: 0 10px; }
+
+.table-actions { display: flex; gap: 10px; justify-content: center; align-items: center; padding: 8px; min-height: 46px; }
+.waiting { color: var(--text-dim); font-size: 13px; }
+.error-text { color: var(--danger); font-size: 13px; }
+
+/* ---- 扑克牌 ---- */
+.card {
+  width: 52px; height: 74px;
+  border-radius: 6px;
+  background: var(--card-face);
+  border: 1px solid #b9b3a4;
+  position: relative;
+  display: inline-block;
+  margin-right: -20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+  transition: transform .12s ease;
+  user-select: none;
+}
+.card:last-child { margin-right: 0; }
+.card.red { color: var(--card-red); }
+.card.black { color: var(--card-black); }
+.card-corner { position: absolute; top: 3px; left: 5px; font-weight: 700; font-size: 15px; }
+.card-suit { position: absolute; bottom: 4px; right: 6px; font-size: 16px; }
+.card-joker-tag { position: absolute; top: 3px; right: 5px; font-size: 11px; opacity: .85; }
+.card.selected { transform: translateY(-14px); }
+.card.selectable { cursor: pointer; }
+.card.selectable:hover { transform: translateY(-6px); }
+.card.selected.selectable:hover, .card.selected:hover { transform: translateY(-14px); }
+.card.dim { opacity: .4; }
+.card.small { width: 36px; height: 52px; margin-right: -12px; }
+.card.small .card-corner { font-size: 11px; }
+.card.small .card-suit { font-size: 12px; }
+.card.back { background: linear-gradient(135deg, #35507c, #22344f); border-color: #4a6a9c; }
+
+.hand { display: flex; padding-left: 20px; }
+.my-hand { justify-content: center; padding: 18px 10px 14px; overflow-x: auto; max-width: 100vw; }
+
+.played { display: flex; align-items: center; min-height: 52px; }
+.pass-tag { color: var(--text-dim); font-size: 13px; }
+
+/* ---- 记牌器 ---- */
+.recorder { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; padding: 2px 8px 6px; }
+.recorder-cell {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 36px; background: var(--panel); border-radius: 6px; padding: 2px 4px;
+  font-size: 11px; border: 1px solid color-mix(in srgb, var(--text-dim) 25%, transparent);
+}
+.recorder-cell.zero { opacity: .35; }
+.recorder-rank { color: var(--text-dim); }
+.recorder-count { font-weight: 700; color: var(--accent); font-size: 13px; }
