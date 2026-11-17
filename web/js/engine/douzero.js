@@ -1,7 +1,7 @@
 // DouZero 推理会话:onnxruntime-web(vendored)+ Web Worker 优先,三级降级
 // (vendored worker 文件 → blob worker → 主线程),会话失败/单步 >800ms 抛 DouzeroUnavailable。
 // node 侧(Task 17)复用 pickMoveCore,只需提供 infer({z, x, dim}) → Promise<q>。
-import { buildBatch, Z_SHAPE } from './douzero-encode.js';
+import { buildBatch, Z_SHAPE, seatToPosition } from './douzero-encode.js';
 
 export class DouzeroUnavailable extends Error {}
 
@@ -16,10 +16,11 @@ export async function pickMoveCore(infer, state, seat, candidates) {
   const t0 = performance.now();
   if (!candidates || candidates.length === 0) throw new DouzeroUnavailable('无候选动作');
   const { z, x, dim, count } = buildBatch(state, seat, candidates);
+  const position = seatToPosition(state, seat);
   // z 共享一份,展开为 [B, 5*162](行间相同)
   const zBatch = new Float32Array(count * z.length);
   for (let i = 0; i < count; i++) zBatch.set(z, i * z.length);
-  const q = await infer({ z: zBatch, x, dim, count });
+  const q = await infer({ z: zBatch, x, dim, count, position });
   let best = 0;
   for (let i = 1; i < count; i++) if (q[i] > q[best]) best = i;
   return {
