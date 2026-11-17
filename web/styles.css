@@ -131,3 +131,37 @@ button.primary {
 .recorder-cell.zero { opacity: .35; }
 .recorder-rank { color: var(--text-dim); }
 .recorder-count { font-weight: 700; color: var(--accent); font-size: 13px; }
+
+/* ---- 首屏 / 结算 / 战绩 ---- */
+.screen {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 24px;
+  background: radial-gradient(ellipse at center, var(--felt), var(--felt-deep, #175233));
+}
+.home-title { font-size: 34px; margin: 0; color: var(--text); letter-spacing: 2px; }
+.home-sub { font-size: 12px; color: var(--text-dim); margin: 0 0 8px; text-align: center; max-width: 420px; }
+.home-resume { min-width: 180px; }
+.home-start { min-width: 180px; font-size: 15px; }
+.home-stats-link { background: none; border: none; color: var(--text-dim); text-decoration: underline; font-size: 13px; }
+
+.option-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.option-label { font-size: 13px; color: var(--text-dim); min-width: 64px; text-align: right; }
+.option-btn { min-width: 64px; }
+.option-btn.picked { background: var(--accent); border-color: var(--accent); color: #17211a; font-weight: 700; }
+.theme-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 6px; vertical-align: -2px; }
+
+.settle-title { font-size: 32px; margin: 0; }
+.settle-title.win { color: var(--ok, #58b368); }
+.settle-title.lose { color: var(--danger, #e05a4e); }
+.settle-sub { color: var(--text-dim); margin: 0; }
+.settle-detail, .settle-scores, .stats-detail {
+  background: var(--panel); border-radius: 10px; padding: 10px 18px; min-width: 300px;
+  border: 1px solid color-mix(in srgb, var(--text-dim) 25%, transparent);
+}
+.settle-row { display: flex; justify-content: space-between; gap: 24px; padding: 4px 0; font-size: 14px; }
+.delta-plus { color: var(--ok, #58b368); font-weight: 700; }
+.delta-minus { color: var(--danger, #e05a4e); font-weight: 700; }
+.settle-total { color: var(--text-dim); font-size: 13px; margin: 0; }
+.settle-actions { display: flex; gap: 10px; }
+.stats-num { font-weight: 700; color: var(--accent); }
