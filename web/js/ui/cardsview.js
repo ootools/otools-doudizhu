@@ -27,11 +27,16 @@ export function cardEl(cardId, { selected = false, dim = false, small = false } 
 
   const corner = document.createElement('div');
   corner.className = 'card-corner';
-  corner.textContent = f.suit === 'joker' ? '★' : f.text;
-  const suitEl = document.createElement('div');
-  suitEl.className = 'card-suit';
-  suitEl.textContent = f.suit === 'joker' ? (cardId === 53 ? '大王' : '小王') : SUITS[f.suit];
-  el.append(corner, suitEl);
+  const rankText = document.createElement('span');
+  rankText.textContent = f.suit === 'joker' ? '★' : f.text;
+  const cornerSuit = document.createElement('span');
+  cornerSuit.className = 'corner-suit';
+  cornerSuit.textContent = f.suit === 'joker' ? (cardId === 53 ? 'JOKER' : 'JOKER') : SUITS[f.suit];
+  corner.append(rankText, cornerSuit);
+  const ghost = document.createElement('div');
+  ghost.className = 'ghost';
+  ghost.textContent = f.suit === 'joker' ? '☀' : SUITS[f.suit];
+  el.append(corner, ghost);
   if (f.suit === 'joker') {
     const tag = document.createElement('div');
     tag.className = 'card-joker-tag';

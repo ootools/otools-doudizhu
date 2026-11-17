@@ -53,7 +53,11 @@ export function renderTable(container, model) {
   playL.append(playedEl(ui.lastPlays[2]));
   const bubble = document.createElement('div');
   bubble.className = 'event-bubble';
-  bubble.textContent = ui.eventText || '';
+  if (ui.eventText) {
+    const span = document.createElement('span');
+    span.textContent = ui.eventText;
+    bubble.append(span);
+  }
   const playR = document.createElement('div');
   playR.className = 'play play-right';
   playR.append(playedEl(ui.lastPlays[1]));
@@ -108,6 +112,14 @@ export function renderTable(container, model) {
   }
   root.append(actions);
 
+  // ---- 我的最近出牌(当前圈) ----
+  if (ui.lastPlays[0]) {
+    const mine = document.createElement('div');
+    mine.className = 'play-mine';
+    mine.append(playedEl(ui.lastPlays[0]));
+    root.append(mine);
+  }
+
   // ---- 记牌器 ----
   if (ui.recorderVisible && state.hands[0]) {
     const known = [...state.hands[0], ...(state.phase === 'play' ? state.bottom : [])];
@@ -143,11 +155,26 @@ function seatName(state, theme, seat) {
 function seatPanel(state, theme, seat, ui) {
   const panel = document.createElement('div');
   panel.className = `player player-${seat === 2 ? 'left' : 'right'}`;
-  const name = document.createElement('div');
-  name.className = 'player-name' + (state.turn === seat || state.bidTurn === seat ? ' active' : '');
+  const isActive = state.turn === seat || state.bidTurn === seat;
   const isLandlord = state.landlord === seat;
-  name.textContent = `${isLandlord ? '地主·' : ''}${seatName(state, theme, seat)} [剩 ${state.hands[seat].length} 张]`;
-  panel.append(name);
+  const avatarText = seat === 0 ? '🙂' : theme.aiAvatars?.[seat - 1] || '🤖';
+
+  const plate = document.createElement('div');
+  plate.className = 'player-plate' + (isActive ? ' active' : '');
+  const avatar = document.createElement('div');
+  avatar.className = 'player-avatar';
+  avatar.textContent = isLandlord ? '👑' : avatarText;
+  const meta = document.createElement('div');
+  meta.className = 'player-meta';
+  const name = document.createElement('div');
+  name.className = 'player-name';
+  name.textContent = `${isLandlord ? '地主·' : ''}${seatName(state, theme, seat)}`;
+  const count = document.createElement('div');
+  count.className = 'player-count';
+  count.textContent = `剩 ${state.hands[seat].length} 张`;
+  meta.append(name, count);
+  plate.append(avatar, meta);
+  panel.append(plate);
   if (ui.lastPlays[seat]) {
     panel.append(playedEl(ui.lastPlays[seat]));
   }

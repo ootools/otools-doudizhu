@@ -24,7 +24,16 @@ export function homeScreen(app, { store, onResume, onStart, onStats }) {
   const prefs = store.getPrefs();
   const savedTheme = store.getTheme();
   const root = el('div', 'screen home-screen');
-  root.append(el('h1', 'home-title', '🃏 斗地主'));
+  const hero = el('div', 'hero');
+  const fan = el('div', 'hero-cards');
+  for (let i = 0; i < 3; i++) {
+    const back = document.createElement('div');
+    back.className = 'card back';
+    fan.append(back);
+  }
+  hero.append(fan);
+  hero.append(el('h1', 'home-title', '斗地主'));
+  root.append(hero);
   root.append(el('p', 'home-sub', '经典三人本机对局 · easy/normal 规则 AI · hard 档 DouZero 神经网络强 AI · 完全离线'));
 
   if (saved && saved.phase && saved.phase !== 'settle') {
@@ -34,6 +43,7 @@ export function homeScreen(app, { store, onResume, onStart, onStats }) {
   }
 
   // 难度
+  const lvCard = el('div', 'option-card');
   const lvBox = el('div', 'option-group');
   lvBox.append(el('div', 'option-label', '难度'));
   const lvBtns = {};
@@ -46,9 +56,11 @@ export function homeScreen(app, { store, onResume, onStart, onStats }) {
     lvBtns[id] = b;
     lvBox.append(b);
   }
-  root.append(lvBox);
+  lvCard.append(lvBox);
+  root.append(lvCard);
 
   // 主题
+  const themeCard = el('div', 'option-card');
   const themeBox = el('div', 'option-group');
   themeBox.append(el('div', 'option-label', '牌桌皮肤'));
   const themeBtns = {};
@@ -66,9 +78,11 @@ export function homeScreen(app, { store, onResume, onStart, onStats }) {
     themeBtns[t.id] = b;
     themeBox.append(b);
   }
-  root.append(themeBox);
+  themeCard.append(themeBox);
+  root.append(themeCard);
 
   // 记牌器
+  const recCard = el('div', 'option-card');
   const recBox = el('div', 'option-group');
   recBox.append(el('div', 'option-label', '记牌器'));
   const recBtn = el('button', 'option-btn' + (prefs.recorder ? ' picked' : ''), prefs.recorder ? '开' : '关');
@@ -78,7 +92,8 @@ export function homeScreen(app, { store, onResume, onStart, onStats }) {
     recBtn.classList.toggle('picked', prefs.recorder);
   });
   recBox.append(recBtn);
-  root.append(recBox);
+  recCard.append(recBox);
+  root.append(recCard);
 
   const start = el('button', 'primary home-start', '开始新对局');
   start.addEventListener('click', () => {
