@@ -6,3 +6,4 @@
  */
 import './cards.test.js';
 import './moves.test.js';
+import './game.test.js';
