@@ -9,3 +9,5 @@ import './moves.test.js';
 import './game.test.js';
 import './ai.test.js';
 import './e2e.test.js';
+import './store.test.js';
+import './recorder.test.js';
