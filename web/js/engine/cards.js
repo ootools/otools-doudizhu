@@ -168,3 +168,196 @@ export function canBeat(move, last) {
   if ((move.len ?? 0) !== (last.len ?? 0)) return false;
   return move.rank > last.rank;
 }
+
+// ---------------------------------------------------------------------------
+// 合法出牌枚举
+// ---------------------------------------------------------------------------
+
+// 每个 rank 手里实际的牌 id(升序)
+function byRankOf(hand) {
+  const byRank = Array.from({ length: 15 }, () => []);
+  for (const c of [...hand].sort((a, b) => a - b)) byRank[rankOf(c)].push(c);
+  return byRank;
+}
+
+// 从 byRank 挖走 used 的 {rank: n} 张后,剩余可作翅膀的牌
+function poolMinus(byRank, used) {
+  const pool = Array.from({ length: 15 }, () => []);
+  for (let r = 0; r < 15; r++) {
+    const n = byRank[r].length - (used[r] || 0);
+    for (let i = 0; i < n; i++) pool[r].push(byRank[r][i]);
+  }
+  return pool;
+}
+
+// 翅膀「单张」组合:多重集枚举(rank 规范化,每单位取该 rank 依次未用的最小 id),双王同选剔除
+function wingCombos(pool, k) {
+  const out = [];
+  const acc = [];
+  (function rec(minR) {
+    if (acc.length === k) {
+      if (!(acc.includes(52) && acc.includes(53))) out.push([...acc]);
+      return;
+    }
+    for (let r = minR; r < 15; r++) {
+      const usedOfR = acc.reduce((n, c) => n + (rankOf(c) === r ? 1 : 0), 0);
+      if (usedOfR >= pool[r].length) continue;
+      acc.push(pool[r][usedOfR]);
+      rec(r);
+      acc.pop();
+    }
+  })(0);
+  return out;
+}
+
+// 翅膀「对子」组合:k 个 distinct rank(王不成对),每 rank 取最小两张
+function wingPairs(pool, k) {
+  const out = [];
+  (function rec(minR, acc) {
+    if (acc.length === k * 2) { out.push([...acc]); return; }
+    for (let r = minR; r <= 12; r++) {
+      if (pool[r].length < 2) continue;
+      acc.push(pool[r][0], pool[r][1]);
+      rec(r + 1, acc);
+      acc.length -= 2;
+    }
+  })(0, []);
+  return out;
+}
+
+// 顺子/连对滑窗(rank 规范化,每 rank 取最小 size 张),rank ≤ A(11)
+function straightOf(byRank, len, size, fromRank, push) {
+  for (let r = fromRank; r + len - 1 <= 11; r++) {
+    let ok = true;
+    for (let i = 0; i < len; i++) if (byRank[r + i].length < size) { ok = false; break; }
+    if (!ok) continue;
+    const cards = [];
+    for (let i = 0; i < len; i++) cards.push(...byRank[r + i].slice(0, size));
+    push(cards);
+  }
+}
+
+function genFree(counts, byRank, push) {
+  for (const c of byRank.flat()) push([c]); // 单张:每张牌都是独立动作
+  for (let r = 0; r <= 12; r++) {
+    if (counts[r] >= 2) push(byRank[r].slice(0, 2)); // pair:rank 规范化(最小花色)
+    if (counts[r] >= 3) push(byRank[r].slice(0, 3)); // trio:同上
+  }
+  // 三带一 / 三带二
+  for (let r = 0; r <= 12; r++) {
+    if (counts[r] < 3) continue;
+    const trio = byRank[r].slice(0, 3);
+    const pool = poolMinus(byRank, { [r]: 3 });
+    for (const w of wingCombos(pool, 1)) push([...trio, ...w]);
+    for (const w of wingPairs(pool, 1)) push([...trio, ...w]);
+  }
+  // 顺子 / 连对
+  for (let len = 5; len <= 12; len++) straightOf(byRank, len, 1, 0, push);
+  for (let len = 3; len <= 10; len++) straightOf(byRank, len, 2, 0, push);
+  // 飞机系列
+  for (let k = 2; k <= 6; k++) {
+    for (let r = 0; r + k - 1 <= 11; r++) {
+      let ok = true;
+      const chain = [];
+      const used = {};
+      for (let i = 0; i < k; i++) {
+        if (byRank[r + i].length < 3) { ok = false; break; }
+        chain.push(...byRank[r + i].slice(0, 3));
+        used[r + i] = 3;
+      }
+      if (!ok) continue;
+      push(chain);
+      const pool = poolMinus(byRank, used);
+      for (const w of wingCombos(pool, k)) push([...chain, ...w]);
+      for (const w of wingPairs(pool, k)) push([...chain, ...w]);
+    }
+  }
+  // 四带二
+  for (let r = 0; r <= 12; r++) {
+    if (counts[r] !== 4) continue;
+    const quad = byRank[r].slice(0, 4);
+    const pool = poolMinus(byRank, { [r]: 4 });
+    for (const w of wingCombos(pool, 2)) push([...quad, ...w]);
+    for (const w of wingPairs(pool, 2)) push([...quad, ...w]);
+  }
+  // 炸弹/火箭收尾(约定:非炸弹在前)
+  for (let r = 0; r <= 12; r++) if (counts[r] === 4) push(byRank[r].slice());
+  if (counts[13] === 1 && counts[14] === 1) push([52, 53]);
+}
+
+function genFollow(counts, byRank, last, push) {
+  if (last.type === 'rocket') return;
+  const t = last.type;
+  const minR = last.rank + 1;
+  if (t === 'bomb') {
+    for (let r = minR; r <= 12; r++) if (counts[r] === 4) push(byRank[r].slice());
+    if (counts[13] === 1 && counts[14] === 1) push([52, 53]);
+    return;
+  }
+  if (t === 'single') {
+    for (let r = minR; r < 15; r++) for (const c of byRank[r]) push([c]);
+  } else if (t === 'pair') {
+    for (let r = minR; r <= 12; r++) if (counts[r] >= 2) push(byRank[r].slice(0, 2));
+  } else if (t === 'trio') {
+    for (let r = minR; r <= 12; r++) if (counts[r] >= 3) push(byRank[r].slice(0, 3));
+  } else if (t === 'trio_single' || t === 'trio_pair') {
+    for (let r = minR; r <= 12; r++) {
+      if (counts[r] < 3) continue;
+      const trio = byRank[r].slice(0, 3);
+      const pool = poolMinus(byRank, { [r]: 3 });
+      if (t === 'trio_single') for (const w of wingCombos(pool, 1)) push([...trio, ...w]);
+      else for (const w of wingPairs(pool, 1)) push([...trio, ...w]);
+    }
+  } else if (t === 'straight') {
+    straightOf(byRank, last.len, 1, minR, push);
+  } else if (t === 'pair_straight') {
+    straightOf(byRank, last.len, 2, minR, push);
+  } else if (t === 'plane' || t === 'plane_single' || t === 'plane_pair') {
+    const k = last.len;
+    for (let r = minR; r + k - 1 <= 11; r++) {
+      let ok = true;
+      const chain = [];
+      const used = {};
+      for (let i = 0; i < k; i++) {
+        if (byRank[r + i].length < 3) { ok = false; break; }
+        chain.push(...byRank[r + i].slice(0, 3));
+        used[r + i] = 3;
+      }
+      if (!ok) continue;
+      if (t === 'plane') { push(chain); continue; }
+      const pool = poolMinus(byRank, used);
+      if (t === 'plane_single') for (const w of wingCombos(pool, k)) push([...chain, ...w]);
+      else for (const w of wingPairs(pool, k)) push([...chain, ...w]);
+    }
+  } else if (t === 'four_two_single' || t === 'four_two_pair') {
+    for (let r = minR; r <= 12; r++) {
+      if (counts[r] !== 4) continue;
+      const quad = byRank[r].slice();
+      const pool = poolMinus(byRank, { [r]: 4 });
+      if (t === 'four_two_single') for (const w of wingCombos(pool, 2)) push([...quad, ...w]);
+      else for (const w of wingPairs(pool, 2)) push([...quad, ...w]);
+    }
+  }
+  // 任何非火箭 last 都可被炸弹/火箭压
+  for (let r = 0; r <= 12; r++) if (counts[r] === 4) push(byRank[r].slice());
+  if (counts[13] === 1 && counts[14] === 1) push([52, 53]);
+}
+
+/**
+ * 合法出牌枚举。hand: card ids;last: Combo|null。
+ * last=null 返回自由出牌全集(非炸弹在前,炸弹/火箭收尾);
+ * last 给定返回同型同长可压 + 炸弹 + 火箭;last 为火箭返回 []。
+ * 每个候选都经 genType 校验,保证是合法组合。
+ */
+export function genMoves(hand, last = null) {
+  const out = [];
+  const push = (cards) => {
+    const sorted = [...cards].sort((a, b) => a - b);
+    if (genType(sorted)) out.push(sorted);
+  };
+  const counts = countsOf(hand);
+  const byRank = byRankOf(hand);
+  if (last) genFollow(counts, byRank, last, push);
+  else genFree(counts, byRank, push);
+  return out;
+}
