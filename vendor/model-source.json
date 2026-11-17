@@ -1,0 +1,14 @@
+{
+  "model": "douzero_ADP (kwai/DouZero 预训练 + ADP 后训练)",
+  "license": "Apache-2.0",
+  "source": [
+    "https://github.com/kwai/DouZero (Pretrained Models 外链,执行时回填确切 URL)"
+  ],
+  "ckpt_sha256": "pending-spike",
+  "converted_at": "pending",
+  "onnx_io_signature": {
+    "inputs": { "z": "float32 [batch,5,162]", "x": "float32 [batch,373|484]" },
+    "outputs": { "q": "float32 [batch]" }
+  },
+  "notes": "由 tools/convert_douzero.py 生成;quantize 状态见文件名(int8 后缀)。"
+}
