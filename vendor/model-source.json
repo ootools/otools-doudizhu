@@ -1,14 +1,26 @@
 {
-  "model": "douzero_ADP (kwai/DouZero 预训练 + ADP 后训练)",
+  "model": "douzero_ADP(kwai/DouZero 预训练 + ADP 后训练,单向 LSTM 162→128)",
   "license": "Apache-2.0",
   "source": [
-    "https://github.com/kwai/DouZero (Pretrained Models 外链,执行时回填确切 URL)"
+    "https://github.com/girgle/DouZero_For_New_HLDDZ (baselines/douzero_ADP,主下载)",
+    "https://github.com/pineoncellar/DouZero_API (main,交叉校验镜像,逐字节一致)"
   ],
-  "ckpt_sha256": "pending-spike",
-  "converted_at": "pending",
+  "ckpt_sha256_prefix": {
+    "landlord": "6f2971813495e9c5",
+    "landlord_up": "7fb7c495ff095db2",
+    "landlord_down": "c173dbe30258f19b"
+  },
+  "converted_at": "2026-11-18",
+  "converter": "tools/convert_douzero.py(torch 2.8 legacy exporter,opset 17)",
   "onnx_io_signature": {
-    "inputs": { "z": "float32 [batch,5,162]", "x": "float32 [batch,373|484]" },
+    "inputs": { "z": "float32 [batch,5,162]", "x": "float32 [batch,373(landlord)|484(farmer)]" },
     "outputs": { "q": "float32 [batch]" }
   },
-  "notes": "由 tools/convert_douzero.py 生成;quantize 状态见文件名(int8 后缀)。"
+  "files": {
+    "web/model/landlord.onnx": 5834301,
+    "web/model/landlord_up.onnx": 6061629,
+    "web/model/landlord_down.onnx": 6061629
+  },
+  "quantize": "none——int8 动态量化实测 max|Δq|≈1.77,远超 1e-3 对拍容差,按『量化以对拍精度不降为前提』的已定决策否决;fp32 对拍 max|Δq|=1.96e-4(spike 实测)",
+  "notes": "官方 Google Drive 本机不可达,改用双 GitHub 镜像交叉校验;Vincentzyx 仓内为 ResNet 架构,未采用。"
 }
