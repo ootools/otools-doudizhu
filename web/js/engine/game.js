@@ -108,6 +108,8 @@ export function play(state, seat, cards) {
     if (!state.lastPlay) throw new Error('自由出牌不能过');
     const next = clone(state);
     next.passCount += 1;
+    // pass 占据历史槽位(官方 card_play_action_seq 语义,编码层 z/last_move 依赖)
+    next.history.push({ seat, cards: [] });
     if (next.passCount >= 2) {
       // 连续两家过:上一手赢家重新自由出牌
       next.lastPlay = null;

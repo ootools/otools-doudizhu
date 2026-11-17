@@ -74,10 +74,10 @@ function spawnBlobWorker(ortUrl, workerSrcUrl) {
           const xT = new ort.Tensor('float32', msg.x, [msg.count, dims[msg.position]]);
           const out = await sessions[msg.position].run({ z: zT, x: xT });
           const q = out.q.data;
-          self.postMessage({ type: 'q', q: Array.from(q), ms: performance.now() - t0 });
+          self.postMessage({ type: 'q', q: Array.from(q), ms: performance.now() - t0, seq: msg.seq });
         }
       } catch (e) {
-        self.postMessage({ type: 'error', message: String(e && e.message || e) });
+        self.postMessage({ type: 'error', message: String(e && e.message || e), seq: msg && msg.seq });
       }
     };
   `;
@@ -148,21 +148,24 @@ export function createSession({ models = { landlord: '../../model/landlord.onnx'
   const absModels = {};
   for (const pos of POSITIONS) absModels[pos] = absolute(models[pos]);
 
-  let disposeFn = () => {};
+  const spawnedWorkers = [];
+  let disposeFn = () => {
+    for (const w of spawnedWorkers) { try { w.terminate(); } catch (e) { /* 忽略 */ } }
+  };
   const ready = (async () => {
     if (params.has('nomodel')) throw new DouzeroUnavailable('nomodel=1(测试钩子)');
     if (useWorker && !params.has('noworker')) {
       for (const spawn of [spawnVendoredWorker, () => spawnBlobWorker(absolute('../../vendor/ort/ort.wasm.min.mjs'), absolute('./douzero-worker.js'))]) {
         try {
-          let worker;
-          const wired = wireWorker((worker = spawn()), absModels).then((s) => { disposeFn = () => worker.terminate(); return s; });
-          const s = await withTimeout(wired, 15000, 'worker 初始化');
+          const worker = spawn();
+          spawnedWorkers.push(worker);
+          const s = await withTimeout(wireWorker(worker, absModels), 15000, 'worker 初始化');
           return s;
         } catch (e) { /* 下一种形态 */ }
       }
     }
     const s = await withTimeout(mainThreadSession(absModels).ready, 20000, '主线程会话初始化');
-    disposeFn = s.dispose;
+    disposeFn = () => { for (const w of spawnedWorkers) { try { w.terminate(); } catch (e) { /* 忽略 */ } } s.dispose(); };
     return s;
   })();
 

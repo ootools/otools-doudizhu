@@ -22,24 +22,24 @@ export function createStore(storage) {
       return false; // 配额满 / 隐私模式:静默失败,游戏继续
     }
   }
-  const stats = { ...DEFAULT_STATS };
-
   return {
     saveGame(state) { return write(KEY('game'), state); },
     loadGame() { return read(KEY('game'), null); },
     clearGame() {
       try { storage.removeItem(KEY('game')); } catch (e) { /* 忽略 */ }
     },
-    getStats() { return { ...stats }; },
-    // settle: game.js 的结算结果;seat: 玩家座位;landlord: 地主座位
+    getStats() { return { ...DEFAULT_STATS, ...read(KEY('stats'), {}) }; },
+    // settle: game.js 的结算结果;seat: 玩家座位;landlord: 地主座位。读取-合并-写回持久化。
     recordResult(settle, seat, landlord) {
-      stats.games += 1;
+      const st = this.getStats();
+      st.games += 1;
       const won = settle.deltas[seat] > 0;
-      if (won) stats.wins += 1;
-      if (won && seat === landlord) stats.landlordWins += 1;
-      if (won && seat !== landlord) stats.farmerWins += 1;
-      stats.score += settle.deltas[seat];
-      return { ...stats };
+      if (won) st.wins += 1;
+      if (won && seat === landlord) st.landlordWins += 1;
+      if (won && seat !== landlord) st.farmerWins += 1;
+      st.score += settle.deltas[seat];
+      write(KEY('stats'), st);
+      return { ...st };
     },
     getPrefs() { return { ...DEFAULT_PREFS, ...read(KEY('prefs'), {}) }; },
     setPrefs(patch) {
@@ -47,8 +47,9 @@ export function createStore(storage) {
       write(KEY('prefs'), merged);
       return merged;
     },
-    getTheme() { return read(KEY('theme'), null); },
-    setTheme(theme) { return write(KEY('theme'), theme); },
+    // 皮肤键独立于 index.html 主题引导的 ':theme'(防 {mode,accent} 与 {id} 撞键)
+    getTheme() { return read(KEY('skin'), null); },
+    setTheme(theme) { return write(KEY('skin'), theme); },
   };
 }
 

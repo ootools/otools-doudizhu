@@ -84,7 +84,10 @@ function startGame({ level = 'normal', themeId = 'green', recorder = true, saved
       setBgmEnabled(next);
       store.setPrefs({ bgm: next });
     },
-    onSettle: (settleResult, state) => showSettle(settleResult, state, { level, themeId, recorder }),
+    onSettle: (settleResult, state) => {
+      store.recordResult(settleResult, 0, state.landlord); // 战绩记账并持久化
+      showSettle(settleResult, state, { level, themeId, recorder });
+    },
   });
   currentController.start();
 }

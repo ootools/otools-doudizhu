@@ -73,9 +73,9 @@ test('四带二:带两单/带两对,翅膀不含炸弹与火箭', () => {
   assert.deepEqual(shape(genType([id(0), id(0, 1), id(0, 2), id(0, 3), id(4), id(5)])), { type: 'four_two_single', rank: 0, len: null });
   assert.deepEqual(shape(genType([id(0), id(0, 1), id(0, 2), id(0, 3), id(4), id(4, 1)])), { type: 'four_two_single', rank: 0, len: null });
   assert.deepEqual(shape(genType([id(0), id(0, 1), id(0, 2), id(0, 3), id(4), id(4, 1), id(5), id(5, 1)])), { type: 'four_two_pair', rank: 0, len: null });
-  // 翅膀 = 火箭(双王)不允许
-  assert.equal(genType([id(0), id(0, 1), id(0, 2), id(0, 3), 52, 53]), null);
-  // 翅膀 = 炸弹(4444 作两对)不允许
+  // 翅膀 = 双王:官方 type_13 实测合法([0,0,0,0,20,30])
+  assert.deepEqual(shape(genType([id(0), id(0, 1), id(0, 2), id(0, 3), 52, 53])), { type: 'four_two_single', rank: 0, len: null });
+  // 翅膀 = 炸弹(4444 作两对):官方 generator 不产出(需两个不同 rank)→ 非法
   assert.equal(genType([id(0), id(0, 1), id(0, 2), id(0, 3), id(4), id(4, 1), id(4, 2), id(4, 3)]), null);
 });
 

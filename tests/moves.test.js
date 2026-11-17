@@ -88,14 +88,18 @@ test('无解返回空数组', () => {
   assert.deepEqual(genMoves(hand, last), []);
 });
 
-test('翅膀约束:单王可作翅膀,双王(火箭)不可', () => {
+test('翅膀约束:单王可作翅膀;三带二/飞机带对不可双王;四带二单可双王(官方 type_13)', () => {
   const hand = [4, 5, 6, 52, 53]; // 444 + 王
   const keys = norm(genMoves(hand, null));
   assert.ok(keys.includes('4,5,6,52'), '三带一 444+小王');
-  assert.ok(!keys.includes('4,5,6,52,53'), '三带二不得用火箭作翅膀');
-  // 四带二:双王作两单不行,单王可以
+  assert.ok(!keys.includes('4,5,6,52,53'), '三带二不得用火箭作翅膀(且 5 张无对子)');
+  // 四带二单:双王作两单合法(官方 gen_type_13_4_2 实测产出)
   const hand2 = [0, 1, 2, 3, 52, 53, 8, 9];
   const keys2 = norm(genMoves(hand2, null));
-  assert.ok(!keys2.includes('0,1,2,3,52,53'), '四带双王不允许');
+  assert.ok(keys2.includes('0,1,2,3,52,53'), '四带二单双王合法');
   assert.ok(keys2.includes('0,1,2,3,8,9'), '四带二单 55');
+  // 飞机带单:双王翅膀合法(官方 gen_type_11 实测产出 [3,3,3,4,4,4,20,30])
+  const hand3 = [0, 1, 2, 4, 5, 6, 52, 53];
+  const keys3 = norm(genMoves(hand3, null));
+  assert.ok(keys3.includes('0,1,2,4,5,6,52,53'), '飞机带单双王合法');
 });

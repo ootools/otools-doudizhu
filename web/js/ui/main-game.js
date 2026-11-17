@@ -181,6 +181,7 @@ export function createGameController({
   // 提示:当前对局最高引擎推荐(easy/normal 用规则 AI;hard 局由 session 接管)
   async function humanHint() {
     if (state.phase !== 'play' || state.turn !== 0) return;
+    const requestTurn = state.turn;
     let suggestion = null;
     if (session && level === 'hard' && !sessionBroken) {
       const moves = legalMoves(state, 0);
@@ -188,6 +189,8 @@ export function createGameController({
         try { suggestion = (await session.pickMove(state, 0, moves)).cards; } catch (e) { sessionBroken = true; }
       }
     }
+    // await 期间局面可能已推进:过期建议直接丢弃
+    if (destroyed || !state || state.phase !== 'play' || state.turn !== requestTurn) return;
     if (!suggestion) {
       suggestion = choosePlay(state, 0, { level: aiLevel(), rng });
     }

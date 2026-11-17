@@ -97,27 +97,23 @@ export function genType(cards) {
       const restLen = n - 3 * k;
       const restRanks = [];
       for (let r = 0; r < 15; r++) if (restCounts[r] > 0) restRanks.push(r);
-      const rocketWings = restCounts[13] === 1 && restCounts[14] === 1;
       if (restLen === 0) {
         return { type: 'plane', rank: chain[0], len: k, cards: sorted };
       }
-      if (restLen === k && !rocketWings && restCounts.every((c) => c <= 2)) {
+      // 飞机带单翅膀可为双王(官方 type_11 实测产出 [3,3,3,4,4,4,20,30])
+      if (restLen === k && restCounts.every((c) => c <= 2)) {
         return { type: 'plane_single', rank: chain[0], len: k, cards: sorted };
       }
-      if (restLen === 2 * k && !rocketWings &&
+      if (restLen === 2 * k &&
           restRanks.length === k && restRanks.every((r) => restCounts[r] === 2 && r !== 13 && r !== 14)) {
         return { type: 'plane_pair', rank: chain[0], len: k, cards: sorted };
       }
     }
   }
 
-  // 四带二系列
+  // 四带二系列(翅膀可为双王:官方 type_13 实测产出 [0,0,0,0,20,30])
   if (n === 6 && quadRank >= 0) {
-    const rest = counts.slice();
-    rest[quadRank] = 0;
-    if (!(rest[13] === 1 && rest[14] === 1)) {
-      return { type: 'four_two_single', rank: quadRank, len: null, cards: sorted };
-    }
+    return { type: 'four_two_single', rank: quadRank, len: null, cards: sorted };
   }
   if (n === 8 && quadRank >= 0) {
     const rest = counts.slice();
@@ -180,23 +176,24 @@ function byRankOf(hand) {
   return byRank;
 }
 
-// 从 byRank 挖走 used 的 {rank: n} 张后,剩余可作翅膀的牌
+// 从 byRank 挖走 used 的 {rank: n} 张(每 rank 最小 n 张)后,剩余可作翅膀的牌
 function poolMinus(byRank, used) {
   const pool = Array.from({ length: 15 }, () => []);
   for (let r = 0; r < 15; r++) {
-    const n = byRank[r].length - (used[r] || 0);
-    for (let i = 0; i < n; i++) pool[r].push(byRank[r][i]);
+    const start = used[r] || 0;
+    for (let i = start; i < byRank[r].length; i++) pool[r].push(byRank[r][i]);
   }
   return pool;
 }
 
-// 翅膀「单张」组合:多重集枚举(rank 规范化,每单位取该 rank 依次未用的最小 id),双王同选剔除
+// 翅膀「单张」组合:多重集枚举(rank 规范化,每单位取该 rank 依次未用的最小 id)
+// 双王同选合法(官方 type_11/type_13 实测产出),不再剔除
 function wingCombos(pool, k) {
   const out = [];
   const acc = [];
   (function rec(minR) {
     if (acc.length === k) {
-      if (!(acc.includes(52) && acc.includes(53))) out.push([...acc]);
+      out.push([...acc]);
       return;
     }
     for (let r = minR; r < 15; r++) {
