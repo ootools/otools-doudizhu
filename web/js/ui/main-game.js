@@ -4,13 +4,14 @@ import { chooseBid, choosePlay } from '../engine/ai.js';
 import { genType } from '../engine/cards.js';
 import { themeCopy } from '../../data/themes.js';
 import { renderTable } from './table.js';
+import { sfx } from '../audio.js';
 
 const delay = (rng) => 600 + Math.floor(rng() * 600);
 
 export function createGameController({
   container, level = 'normal', theme, store,
   session = null, recorderVisible = true, onSettle = () => {}, rng = Math.random,
-  initialState = null,
+  initialState = null, onToggleBgm = () => {}, bgmOn = false,
 }) {
   let state = null;
   let timer = null;
@@ -20,6 +21,8 @@ export function createGameController({
     lastPlays: {}, recorderVisible,
     onBid: (v) => humanBid(v), onPass: () => humanPass(), onPlay: () => humanPlay(),
     onHint: () => humanHint(), onToggleCard: (id) => toggleCard(id),
+    onToggleBgm: () => { ui.bgmOn = !ui.bgmOn; onToggleBgm(ui.bgmOn); render(); },
+    bgmOn,
   };
   const seatName = (seat) => (seat === 0 ? '我' : theme.aiNames[seat - 1] || `AI${seat}`);
   // hard 档但会话不可用 → 降 normal(设计稿降级链)
@@ -70,7 +73,9 @@ export function createGameController({
     if (state.phase === 'settle') {
       store.clearGame();
       render();
-      onSettle(settle(state), state);
+      const r = settle(state);
+      sfx(r.deltas[0] > 0 ? 'win' : 'lose');
+      onSettle(r, state);
       return;
     }
     store.saveGame(state);
@@ -88,6 +93,7 @@ export function createGameController({
         ui.eventText = v === 0
           ? themeCopy(theme, 'pass', { name: seatName(seat) })
           : themeCopy(theme, 'bid', { name: seatName(seat), score: v });
+        sfx(v === 0 ? 'pass' : 'bid');
         afterChange();
       }, delay(rng));
     } else if (state.phase === 'play') {
@@ -117,6 +123,14 @@ export function createGameController({
     ui.eventText = bubbleFor(seat, cards);
     ui.selected.clear();
     ui.errorText = '';
+    // 音效:过 / 炸弹 / 火箭 / 普通出牌
+    if (cards.length === 0) sfx('pass');
+    else {
+      const c = genType(cards);
+      if (c.type === 'rocket') sfx('rocket');
+      else if (c.type === 'bomb') sfx('bomb');
+      else sfx('play');
+    }
     afterChange();
   }
 
@@ -126,6 +140,7 @@ export function createGameController({
     ui.eventText = v === 0
       ? themeCopy(theme, 'pass', { name: '我' })
       : themeCopy(theme, 'bid', { name: '我', score: v });
+    sfx(v === 0 ? 'pass' : 'bid');
     afterChange();
   }
 
@@ -146,12 +161,14 @@ export function createGameController({
     const selected = [...ui.selected].sort((a, b) => a - b);
     if (selected.length === 0) {
       ui.errorText = '请先点选要出的牌';
+      sfx('error');
       render();
       return;
     }
     const legal = legalMoves(state, 0);
     if (!legal.some((m) => m.join(',') === selected.join(','))) {
       ui.errorText = '不是合法牌型或压不过上家';
+      sfx('error');
       render();
       return;
     }
@@ -186,6 +203,7 @@ export function createGameController({
     ui.selected.clear();
     ui.errorText = '';
     ui.eventText = themeCopy(theme, 'deal');
+    if (!initialState) sfx('deal');
     if (state.phase === 'settle') {
       render();
       onSettle(settle(state), state);

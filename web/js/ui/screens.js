@@ -1,5 +1,6 @@
 // 首屏 / 结算 / 战绩 三屏(纯 DOM,store 注入)
 import { getTheme, THEMES } from '../../data/themes.js';
+import { setSfxEnabled, setBgmEnabled } from '../audio.js';
 
 export function applyThemeVars(theme, root = document.documentElement) {
   const p = theme.palette;
@@ -94,6 +95,30 @@ export function homeScreen(app, { store, onResume, onStart, onStats }) {
   recBox.append(recBtn);
   recCard.append(recBox);
   root.append(recCard);
+
+  // 声音(音效 + 背景音乐)
+  const sndCard = el('div', 'option-card');
+  const sndBox = el('div', 'option-group');
+  sndBox.append(el('div', 'option-label', '声音'));
+  const sfxBtn = el('button', 'option-btn' + (prefs.sound ? ' picked' : ''), `音效 ${prefs.sound ? '开' : '关'}`);
+  sfxBtn.addEventListener('click', () => {
+    prefs.sound = !prefs.sound;
+    store.setPrefs({ sound: prefs.sound });
+    setSfxEnabled(prefs.sound);
+    sfxBtn.textContent = `音效 ${prefs.sound ? '开' : '关'}`;
+    sfxBtn.classList.toggle('picked', prefs.sound);
+  });
+  const bgmBtn = el('button', 'option-btn' + (prefs.bgm ? ' picked' : ''), `音乐 ${prefs.bgm ? '开' : '关'}`);
+  bgmBtn.addEventListener('click', () => {
+    prefs.bgm = !prefs.bgm;
+    store.setPrefs({ bgm: prefs.bgm });
+    setBgmEnabled(prefs.bgm); // 首屏点击即手势,可安全启动
+    bgmBtn.textContent = `音乐 ${prefs.bgm ? '开' : '关'}`;
+    bgmBtn.classList.toggle('picked', prefs.bgm);
+  });
+  sndBox.append(sfxBtn, bgmBtn);
+  sndCard.append(sndBox);
+  root.append(sndCard);
 
   const start = el('button', 'primary home-start', '开始新对局');
   start.addEventListener('click', () => {

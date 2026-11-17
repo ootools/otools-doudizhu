@@ -32,7 +32,7 @@ test('存储异常: getItem 抛错/坏 JSON → 返回默认值不抛错', () =>
   assert.equal(store.loadGame(), null);
   assert.deepEqual(store.getStats(), { games: 0, wins: 0, landlordWins: 0, farmerWins: 0, score: 0 });
   assert.equal(store.saveGame({ a: 1 }), false); // 写失败不抛
-  assert.deepEqual(store.getPrefs(), { level: 'normal', recorder: true });
+  assert.deepEqual(store.getPrefs(), { level: 'normal', recorder: true, sound: true, bgm: true });
   assert.equal(store.getTheme(), null);
 });
 
@@ -40,7 +40,7 @@ test('坏 JSON 同样兜底', () => {
   const st = mapStorage();
   st.setItem('otools-doudizhu:prefs', '{oops');
   const store = createStore(st);
-  assert.deepEqual(store.getPrefs(), { level: 'normal', recorder: true });
+  assert.deepEqual(store.getPrefs(), { level: 'normal', recorder: true, sound: true, bgm: true });
 });
 
 test('recordResult 累计战绩(含身份区分与分数)', () => {
@@ -59,9 +59,9 @@ test('getPrefs/setPrefs 合并更新,theme 往返', () => {
   const st = mapStorage();
   const store = createStore(st);
   store.setPrefs({ level: 'hard' });
-  assert.deepEqual(store.getPrefs(), { level: 'hard', recorder: true });
+  assert.deepEqual(store.getPrefs(), { level: 'hard', recorder: true, sound: true, bgm: true });
   store.setPrefs({ recorder: false });
-  assert.deepEqual(store.getPrefs(), { level: 'hard', recorder: false });
+  assert.deepEqual(store.getPrefs(), { level: 'hard', recorder: false, sound: true, bgm: true });
   store.setTheme({ id: 'neon' });
   assert.deepEqual(store.getTheme(), { id: 'neon' });
 });

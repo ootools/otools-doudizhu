@@ -4,6 +4,7 @@ import { restore } from './engine/game.js';
 import { getTheme } from '../data/themes.js';
 import { createGameController } from './ui/main-game.js';
 import { homeScreen, settleScreen, statsScreen, applyThemeVars } from './ui/screens.js';
+import { setSfxEnabled, setBgmEnabled, isBgmOn } from './audio.js';
 
 const store = createStore(defaultStorage());
 const app = document.querySelector('#app');
@@ -14,6 +15,12 @@ function destroyController() {
     currentController.destroy();
     currentController = null;
   }
+}
+
+function applyAudioPrefs() {
+  const prefs = store.getPrefs();
+  setSfxEnabled(prefs.sound);
+  setBgmEnabled(prefs.bgm);
 }
 
 function showHome() {
@@ -39,6 +46,8 @@ function showHome() {
 
 function startGame({ level = 'normal', themeId = 'green', recorder = true, savedStateJson = null } = {}) {
   destroyController();
+  const prefs = store.getPrefs();
+  applyAudioPrefs(); // 用户手势上下文内启动音频(自动播放策略)
   const theme = getTheme(themeId);
   store.setTheme({ id: themeId });
   applyThemeVars(theme);
@@ -57,6 +66,11 @@ function startGame({ level = 'normal', themeId = 'green', recorder = true, saved
     store,
     recorderVisible: recorder,
     initialState,
+    bgmOn: isBgmOn(),
+    onToggleBgm: (next) => {
+      setBgmEnabled(next);
+      store.setPrefs({ bgm: next });
+    },
     onSettle: (settleResult, state) => showSettle(settleResult, state, { level, themeId, recorder }),
   });
   currentController.start();

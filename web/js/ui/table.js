@@ -41,6 +41,12 @@ export function renderTable(container, model) {
   mult.className = 'multiplier';
   mult.textContent = `底分 ${state.baseScore || '-'} · 倍数 ×${state.multiplier}`;
   mid.append(mult);
+  const bgmBtn = document.createElement('button');
+  bgmBtn.className = 'bgm-btn';
+  bgmBtn.textContent = ui.bgmOn ? '🔊' : '🔇';
+  bgmBtn.title = '背景音乐开关';
+  bgmBtn.addEventListener('click', () => ui.onToggleBgm());
+  mid.append(bgmBtn);
 
   top.append(left, mid, right);
   root.append(top);
@@ -157,13 +163,30 @@ function seatPanel(state, theme, seat, ui) {
   panel.className = `player player-${seat === 2 ? 'left' : 'right'}`;
   const isActive = state.turn === seat || state.bidTurn === seat;
   const isLandlord = state.landlord === seat;
-  const avatarText = seat === 0 ? '🙂' : theme.aiAvatars?.[seat - 1] || '🤖';
+  const avatarText = seat === 0 ? '🙂' : '🤖'; // 头像图加载失败时的兜底 emoji
 
   const plate = document.createElement('div');
   plate.className = 'player-plate' + (isActive ? ' active' : '');
   const avatar = document.createElement('div');
   avatar.className = 'player-avatar';
-  avatar.textContent = isLandlord ? '👑' : avatarText;
+  const avatarSrc = seat === 0 ? 'img/avatars/player.svg' : theme.aiAvatars?.[seat - 1];
+  const img = document.createElement('img');
+  img.className = 'player-avatar-img';
+  img.alt = '';
+  img.src = avatarSrc;
+  img.addEventListener('error', () => {
+    img.remove();
+    const span = document.createElement('span');
+    span.textContent = isLandlord ? '👑' : avatarText;
+    avatar.append(span);
+  });
+  avatar.append(img);
+  if (isLandlord) {
+    const crown = document.createElement('div');
+    crown.className = 'player-crown';
+    crown.textContent = '👑';
+    avatar.append(crown);
+  }
   const meta = document.createElement('div');
   meta.className = 'player-meta';
   const name = document.createElement('div');

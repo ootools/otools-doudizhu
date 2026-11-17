@@ -2,7 +2,7 @@
 const KEY = (s) => `otools-doudizhu:${s}`;
 
 const DEFAULT_STATS = { games: 0, wins: 0, landlordWins: 0, farmerWins: 0, score: 0 };
-const DEFAULT_PREFS = { level: 'normal', recorder: true };
+const DEFAULT_PREFS = { level: 'normal', recorder: true, sound: true, bgm: true };
 
 export function createStore(storage) {
   function read(key, fallback) {

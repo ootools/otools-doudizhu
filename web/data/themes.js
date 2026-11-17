@@ -5,7 +5,7 @@ export const THEMES = [
     name: '绿呢牌桌',
     palette: { felt: '#1f6b43', bg: '#15201a', panel: '#1d2a22', accent: '#d4a24e', cardFace: '#fffdf7', cardRed: '#c0392b', cardBlack: '#1c2733', text: '#e8e3d8', textDim: '#9aa89e' },
     aiNames: ['老张', '小美'],
-    aiAvatars: ['🧔', '👩'],
+    aiAvatars: ['img/avatars/laozhang.svg', 'img/avatars/xiaomei.svg'],
     copy: {
       deal: ['发牌完毕,好戏开场!', '牌到手了,愿赌服输。'],
       bid: ['{name}叫了 {score} 分!', '{name}咬牙喊到 {score} 分!'],
@@ -23,7 +23,7 @@ export const THEMES = [
     name: '胡桃木茶馆',
     palette: { felt: '#7a5230', bg: '#241a12', panel: '#31261b', accent: '#c8963e', cardFace: '#faf6ec', cardRed: '#b03a2e', cardBlack: '#2c1f16', text: '#efe6d8', textDim: '#a8988a' },
     aiNames: ['掌柜的', '账房先生'],
-    aiAvatars: ['🍵', '🧮'],
+    aiAvatars: ['img/avatars/zhanggui.svg', 'img/avatars/zhangfang.svg'],
     copy: {
       deal: ['茶还没凉,牌已经洗好了。', '各位客官,牌来了。'],
       bid: ['{name}放下茶盏:「{score} 分。」', '{name}眯眼一算:{score} 分!'],
@@ -41,7 +41,7 @@ export const THEMES = [
     name: '深夜霓虹',
     palette: { felt: '#262047', bg: '#12101f', panel: '#1c1830', accent: '#e05fa0', cardFace: '#f4f2ff', cardRed: '#ff5c7a', cardBlack: '#241f3d', text: '#e8e6f5', textDim: '#8e89ad' },
     aiNames: ['DJ小鹿', '夜猫子'],
-    aiAvatars: ['🦌', '🕶️'],
+    aiAvatars: ['img/avatars/xiaolu.svg', 'img/avatars/yemaozi.svg'],
     copy: {
       deal: ['牌来了,今晚手气如何?', '霓虹灯下,牌局开场。'],
       bid: ['{name}打了个响指:{score} 分!', '{name}压低帽檐:「{score} 分。」'],
