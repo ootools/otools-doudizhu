@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>OTools 斗地主</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <script>
+    /*
+     * 主题引导(本地自持,不依赖宿主样式表):
+     * 读宿主注入的 window.__OTOOLS_THEME__ → 本地缓存 → 系统配色,写 html.dark 与强调色。
+     */
+    (function () {
+      function detect() {
+        try {
+          var host = window.__OTOOLS_THEME__;
+          if (host && host.mode) return host;
+          var saved = localStorage.getItem('otools-doudizhu:theme');
+          if (saved) { try { return JSON.parse(saved); } catch (e) {} }
+          var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          return { mode: dark ? 'dark' : 'light' };
+        } catch (e) { return { mode: 'dark' }; }
+      }
+      var t = detect();
+      var cl = document.documentElement.classList;
+      cl.add(t.mode === 'light' ? 'light' : 'dark');
+      if (t.accent) document.documentElement.style.setProperty('--accent', t.accent);
+      try { localStorage.setItem('otools-doudizhu:theme', JSON.stringify({ mode: t.mode, accent: t.accent || null })); } catch (e) {}
+    })();
+  </script>
+  <script>
+    /*
+     * OTools 宿主桥(精简版)。
+     * 宿主注入 window.otools / window.utools 或 __TAURI_INTERNALS__.invoke 即视为「在宿主里」;
+     * 本插件 v1 无文件读写,只暴露可用性/主题/语言探测。
+     */
+    (function () {
+      function hostReady() {
+        var a = (typeof window !== 'undefined' && (window.otools || window.utools)) || null;
+        if (a) return true;
+        var cands = [window];
+        try { if (window.parent && window.parent !== window) cands.push(window.parent); } catch (e) {}
+        try { if (window.top && window.top !== window) cands.push(window.top); } catch (e) {}
+        for (var i = 0; i < cands.length; i++) {
+          var t = cands[i] && cands[i].__TAURI_INTERNALS__;
+          if (t && typeof t.invoke === 'function') return true;
+        }
+        return false;
+      }
+      window.otoolsPlugin = {
+        available: hostReady,
+        theme: function () {
+          var cl = document.documentElement && document.documentElement.classList;
+          if (!cl) return '';
+          if (cl.contains('dark')) return 'dark';
+          if (cl.contains('light')) return 'light';
+          return '';
+        },
+        language: function () {
+          try {
+            return (window.__OTOOLS_LOCALE__ && window.__OTOOLS_LOCALE__.locale) ||
+              (document.documentElement && document.documentElement.lang) ||
+              (typeof navigator !== 'undefined' && navigator.language) || '';
+          } catch (e) { return ''; }
+        }
+      };
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
