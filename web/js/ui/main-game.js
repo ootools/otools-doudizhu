@@ -3,6 +3,7 @@ import { newGame, bid, play, legalBids, legalMoves, settle, serialize, restore }
 import { chooseBid, choosePlay } from '../engine/ai.js';
 import { genType } from '../engine/cards.js';
 import { themeCopy } from '../../data/themes.js';
+import { emotionsAfterMove } from '../../data/characters.js';
 import { renderTable } from './table.js';
 import { sfx } from '../audio.js';
 
@@ -37,28 +38,23 @@ export function createGameController({
     timer = setTimeout(() => { if (!destroyed) fn(); }, ms);
   }
 
-  // 表情状态机:idle/thinking/play/shocked/win/lose
-  function setEmotion(seat, emo, revertMs = 0) {
+  // 表情状态机:idle/thinking/play/shocked/win/lose(决策核心 emotionsAfterMove 在 characters.js,可单测)
+  function setEmotion(seat, emo) {
     ui.emotions[seat] = emo;
     render();
-    if (revertMs > 0) {
-      const t = setTimeout(() => {
-        if (destroyed) return;
-        ui.emotions[seat] = 'idle';
-        render();
-      }, revertMs);
-      emotionTimers.push(t);
-    }
   }
 
   function applyEmotionsForMove(seat, cards) {
-    if (cards.length === 0) return;
-    const c = genType(cards);
-    if (c.type === 'bomb' || c.type === 'rocket') {
-      for (let s = 0; s < 3; s++) setEmotion(s, 'shocked'); // 下一手出牌解除
-    } else {
-      setEmotion(seat, 'play', PLAY_EMOTION_MS);
-      for (let s = 0; s < 3; s++) if (s !== seat && ui.emotions[s] !== 'shocked') setEmotion(s, 'idle');
+    const next = emotionsAfterMove(ui.emotions, seat, cards);
+    for (let s = 0; s < 3; s++) ui.emotions[s] = next[s];
+    render();
+    if (next[seat] === 'play') {
+      const t = setTimeout(() => {
+        if (destroyed || ui.emotions[seat] !== 'play') return;
+        ui.emotions[seat] = 'idle';
+        render();
+      }, PLAY_EMOTION_MS);
+      emotionTimers.push(t);
     }
   }
 
@@ -104,7 +100,8 @@ export function createGameController({
       const r = settle(state);
       for (let s = 0; s < 3; s++) setEmotion(s, r.deltas[s] > 0 ? 'win' : 'lose');
       sfx(r.deltas[0] > 0 ? 'win' : 'lose');
-      onSettle(r, state);
+      // 表情与跳跃动画在牌桌上播完(~1s)再切结算页
+      schedule(() => onSettle(r, state), 950);
       return;
     }
     store.saveGame(state);

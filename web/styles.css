@@ -136,11 +136,16 @@ button.primary {
   0%, 100% { box-shadow: 0 0 0 2px var(--accent-soft), 0 0 10px var(--accent-soft); }
   50% { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 26px var(--accent-soft); }
 }
-.char-stage.active .char { animation: charBreath 3s ease-in-out infinite; }
+.char-stage.active .char { animation: charBreath 2s ease-in-out infinite; }
+.char-stage.active {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 10px var(--accent-soft)) drop-shadow(0 0 4px var(--accent));
+}
 .char-stage .char.emo-idle { animation: charBreath 3.4s ease-in-out infinite; }
 .char-stage .char.emo-play { animation: charLean 0.35s ease-out; }
 .char-stage .char.emo-shocked { animation: charShake 0.45s ease-in-out 2; }
 .char-stage .char.emo-win { animation: charJump 0.7s ease-in-out 2; }
+.my-seat { display: flex; align-items: flex-end; justify-content: center; gap: 12px; }
+.my-seat .my-hand { padding-top: 10px; }
 @keyframes charBreath {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.035) translateY(-1px); }

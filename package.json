@@ -1,6 +1,6 @@
 {
   "name": "otools-doudizhu",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "OTools 插件:斗地主(经典三人本机 AI,规则评分 + DouZero onnx 强 AI,纯静态实现)",

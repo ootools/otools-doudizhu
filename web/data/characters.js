@@ -2,6 +2,8 @@
 // 表情 = 根 class `emo-<emotion>` 控制内部 e-*(眼)/b-*(眉)/m-*(嘴)分组的显隐(CSS 侧)。
 // 所有变体同时绘制在 SVG 内;零位图、零依赖。
 
+import { genType } from '../js/engine/cards.js';
+
 export const CHARACTER_IDS = ['player', 'laozhang', 'xiaomei', 'zhanggui', 'zhangfang', 'xiaolu', 'yemaozi'];
 export const EMOTIONS = ['idle', 'thinking', 'play', 'shocked', 'win', 'lose'];
 
@@ -87,6 +89,31 @@ function groups(c, emotion) {
   s += blushLayer(c, emotion);
   s += faceDecor(c);
   return s;
+}
+
+/**
+ * 表情状态机(纯函数):一手出牌/过牌后各座位的新表情。
+ * - 炸弹/火箭:全场 shocked;
+ * - 普通出牌:出牌者 play(由调用方安排回 idle),其余无条件 idle(防止 shocked 永久卡脸);
+ * - 过牌:仅解除 shocked(过牌是炸弹后最常见的响应,也算「下一手」)。
+ * @param {Record<number,string>} emotions 当前各座位表情
+ * @param {number} seat 本手出牌座位
+ * @param {number[]} cards 本手牌(空数组=过牌)
+ */
+export function emotionsAfterMove(emotions, seat, cards) {
+  const next = { 0: emotions[0], 1: emotions[1], 2: emotions[2] };
+  if (cards.length === 0) {
+    for (const s of [0, 1, 2]) if (next[s] === 'shocked') next[s] = 'idle';
+    return next;
+  }
+  const combo = genType(cards);
+  if (combo.type === 'bomb' || combo.type === 'rocket') {
+    for (const s of [0, 1, 2]) next[s] = 'shocked';
+    return next;
+  }
+  next[seat] = 'play';
+  for (const s of [0, 1, 2]) if (s !== seat) next[s] = 'idle';
+  return next;
 }
 
 /**

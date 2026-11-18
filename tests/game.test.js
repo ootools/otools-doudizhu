@@ -45,6 +45,7 @@ test('bid:叫 3 立即定地主,底牌翻开并入其手牌,turn 跳到地主', 
   assert.equal(t.phase, 'play');
   assert.equal(t.landlord, seat);
   assert.equal(t.baseScore, 3);
+  assert.equal(t.bidTurn, null, '叫分结束后 bidTurn 必须清空(UI active 高亮按 turn 判断)');
   assert.equal(t.hands[seat].length, 20);
   assert.equal(t.bottom.length, 3); // 底牌保留公示
   assert.equal(t.turn, seat);

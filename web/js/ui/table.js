@@ -168,7 +168,7 @@ function seatName(state, theme, seat) {
 function seatPanel(state, theme, seat, ui) {
   const panel = document.createElement('div');
   panel.className = `player player-${seat === 2 ? 'left' : 'right'}`;
-  const isActive = state.turn === seat || state.bidTurn === seat;
+  const isActive = state.phase === 'bid' ? state.bidTurn === seat : state.turn === seat;
   const isLandlord = state.landlord === seat;
   const charId = seat === 0 ? 'player' : theme.aiCharacters?.[seat - 1] || 'laozhang';
 
@@ -191,7 +191,7 @@ function seatPanel(state, theme, seat, ui) {
   count.textContent = `剩 ${state.hands[seat].length} 张`;
   meta.append(name, count);
   const plate = document.createElement('div');
-  plate.className = 'player-plate';
+  plate.className = 'player-plate' + (isActive ? ' active' : '');
   plate.append(meta);
   panel.append(stage, plate);
   if (ui.lastPlays[seat]) {

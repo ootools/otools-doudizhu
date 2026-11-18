@@ -55,6 +55,7 @@ function finalizeBid(state, winner) {
   state.hands[winner] = [...state.hands[winner], ...state.bottom].sort((a, b) => a - b);
   state.phase = 'play';
   state.turn = winner;
+  state.bidTurn = null; // 叫分结束:UI 的 active 高亮按 turn 判断,防止残留永久高亮
   state.lastPlay = null;
   state.passCount = 0;
   return state;
