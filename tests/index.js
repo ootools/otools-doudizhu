@@ -4,6 +4,7 @@
  * 此文件使该调用形式也能聚合运行全部测试;常规的
  * `node --test tests/*.test.js` 不受影响(每个测试文件独立进程运行)。
  */
+import './audio.test.js';
 import './cards.test.js';
 import './moves.test.js';
 import './game.test.js';

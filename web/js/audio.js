@@ -9,13 +9,16 @@ let bgmTimer = null;
 let nextBarTime = 0;
 let barIndex = 0;
 
-const BAR = 2.4; // 每小节秒数
-// 进程:Am → F → C → G(宽松 lo-fi 和弦垫 + 低音)
+const BPM = 88;
+const BEAT = 60 / BPM;
+const BAR = BEAT * 4;
+const SWING = 0.055;
+// Am → F → C → G:温暖的木质和弦,每小节用不同旋律音避免机械循环。
 const PROG = [
-  { bass: 110.0, chord: [220.0, 261.63, 329.63] },
-  { bass: 87.31, chord: [174.61, 220.0, 261.63] },
-  { bass: 130.81, chord: [261.63, 329.63, 392.0] },
-  { bass: 98.0, chord: [196.0, 246.94, 293.66] },
+  { bass: 110.0, chord: [220.0, 261.63, 329.63], melody: [329.63, 392.0, 440.0, 392.0] },
+  { bass: 87.31, chord: [174.61, 220.0, 261.63], melody: [261.63, 329.63, 392.0, 329.63] },
+  { bass: 130.81, chord: [261.63, 329.63, 392.0], melody: [392.0, 440.0, 523.25, 440.0] },
+  { bass: 98.0, chord: [196.0, 246.94, 293.66], melody: [293.66, 329.63, 392.0, 329.63] },
 ];
 
 function ensure() {
@@ -120,32 +123,52 @@ export function sfx(name) {
   SFX[name]?.();
 }
 
+// 短促拨弦:柔和起音 + 指数衰减,模拟木质拨弦的触感
+function pluck({ freq, at, dur = 0.5, gain = 0.09, type = 'triangle', detuneCents = 0 }) {
+  const o = ctx.createOscillator();
+  o.type = type;
+  o.frequency.value = freq;
+  if (detuneCents) o.detune && (o.detune.value = detuneCents);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(gain, at + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  o.connect(g).connect(bgmGain);
+  o.start(at);
+  o.stop(at + dur + 0.05);
+}
+
+// 柔和低音:只在关键拍轻触
+function bassNote({ freq, at, dur = 0.9, gain = 0.1 }) {
+  const o = ctx.createOscillator();
+  o.type = 'sine';
+  o.frequency.value = freq;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(gain, at + 0.04);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  o.connect(g).connect(bgmGain);
+  o.start(at);
+  o.stop(at + dur + 0.05);
+}
+
 function scheduleBar(t) {
-  const { bass, chord } = PROG[barIndex % PROG.length];
-  chord.forEach((f, i) => {
-    const o = ctx.createOscillator();
-    o.type = 'triangle';
-    o.frequency.value = f;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(0.05, t + 0.5);
-    g.gain.linearRampToValueAtTime(0.038, t + BAR - 0.6);
-    g.gain.linearRampToValueAtTime(0.0001, t + BAR);
-    o.connect(g).connect(bgmGain);
-    o.start(t);
-    o.stop(t + BAR + 0.1);
-    void i;
-  });
-  const b = ctx.createOscillator();
-  b.type = 'sine';
-  b.frequency.value = bass;
-  const bg = ctx.createGain();
-  bg.gain.setValueAtTime(0.0001, t);
-  bg.gain.linearRampToValueAtTime(0.12, t + 0.3);
-  bg.gain.linearRampToValueAtTime(0.0001, t + BAR - 0.2);
-  b.connect(bg).connect(bgmGain);
-  b.start(t);
-  b.stop(t + BAR);
+  const { bass, chord, melody } = PROG[barIndex % PROG.length];
+  const beat = (i) => t + i * BEAT + (i % 2 === 1 ? SWING : 0);
+  // 低音:第 1、3 拍轻触
+  bassNote({ freq: bass, at: beat(0) });
+  bassNote({ freq: bass, at: beat(2), dur: 0.7, gain: 0.07 });
+  // 分解和弦:拨弦铺底
+  pluck({ freq: chord[0], at: beat(0), dur: 0.7, gain: 0.07 });
+  pluck({ freq: chord[1], at: beat(1), dur: 0.55, gain: 0.075 });
+  pluck({ freq: chord[2], at: beat(2), dur: 0.6, gain: 0.07 });
+  pluck({ freq: chord[1], at: beat(3), dur: 0.5, gain: 0.065 });
+  // 旋律:和弦内音的简短点缀,偶数小节高八度变化
+  const oct = barIndex % 4 >= 2 ? 2 : 1;
+  pluck({ freq: melody[0] * oct, at: beat(1) + 0.02, dur: 0.5, gain: 0.05, type: 'sine' });
+  pluck({ freq: melody[1] * oct, at: beat(2) + 0.02, dur: 0.45, gain: 0.05, type: 'sine' });
+  pluck({ freq: melody[2] * oct, at: beat(3) + 0.02, dur: 0.5, gain: 0.045, type: 'sine' });
+  if (barIndex % 2 === 1) pluck({ freq: melody[3] * oct, at: beat(3.5), dur: 0.4, gain: 0.04, type: 'sine' });
   barIndex++;
 }
 
