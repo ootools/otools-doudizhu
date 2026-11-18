@@ -2,7 +2,7 @@
   "uuid": "otools-doudizhu", "packid": "otools-doudizhu",
   "displayName": "Fight the Landlord", "displayNameCN": "斗地主",
   "developerName": "OTools", "summary": "经典三人斗地主:叫分定地主、炸弹春天倍数结算;easy/normal 规则 AI,hard 档 DouZero 神经网络强 AI,完全离线。",
-  "version": "0.1.1", "entry": "dist/index.html",
+  "version": "0.2.0", "entry": "dist/index.html",
   "devUrl": "http://127.0.0.1:6575", "quickDev": true, "hasAd": false,
   "inPluginPurchase": false, "openInBrowser": false,
   "logo": "logo.svg", "icon": "🃏", "screenshots": [],

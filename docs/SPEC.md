@@ -31,6 +31,7 @@ OTools 独立插件:斗地主——经典三人本机 AI 对局(我 + 两个电�
   - `recorder.js`:记牌器纯逻辑(`unseenCounts`,按未见过牌口径)
 - `web/js/ui/`:cardsview(纯 CSS/SVG 扑克牌)、table(牌桌)、main-game(对局控制器)、screens(首屏/结算/战绩)、main.js 路由
 - `web/data/themes.js`:三主题(绿呢牌桌/胡桃木茶馆/深夜霓虹):palette + AI 昵称 + 事件文案变体
+- `web/data/characters.js`:半身卡通角色 SVG 生成器(纯函数 `characterSVG(id, emotion)`);表情状态机 idle/thinking/play/shocked/win/lose 由对局事件驱动,根 class `emo-*` + CSS 动画(呼吸/前倾/抖动/跳跃,prefers-reduced-motion 停用)
 - `web/model/`:三席位 onnx(来源/许可见 `vendor/model-source.json` 与 THIRD_PARTY_NOTICES.md)
 - `tests/`(仓库根):`node --test tests/`(`tests/index.js` 聚合,兼容目录参数被当 CJS 入口的 node 行为)
 - `tools/`:Python 转换与 fixtures 生成(一次性,不入包,见 tools/README.md)
