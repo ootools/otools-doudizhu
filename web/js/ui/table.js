@@ -1,5 +1,6 @@
 // 牌桌布局渲染(状态驱动,每次全量重绘;规模小无性能压力)
 import { handEl, playedEl } from './cardsview.js';
+import { characterSVG } from '../../data/characters.js';
 import { unseenCounts } from '../engine/recorder.js';
 import { RANK_NAMES } from '../engine/cards.js';
 
@@ -141,14 +142,20 @@ export function renderTable(container, model) {
     root.append(strip);
   }
 
-  // ---- 我的手牌 ----
+  // ---- 我的手牌 + 我的角色 ----
+  const mineRow = document.createElement('div');
+  mineRow.className = 'my-seat';
+  const myStage = document.createElement('div');
+  myStage.className = 'char-stage small';
+  myStage.innerHTML = characterSVG('player', ui.emotions[0] || 'idle');
   const mine = handEl(state.hands[0], {
     selectable: state.phase === 'play' && state.turn === 0,
     selectedSet: ui.selected,
     onSelect: ui.onToggleCard,
   });
   mine.classList.add('my-hand');
-  root.append(mine);
+  mineRow.append(myStage, mine);
+  root.append(mineRow);
 
   container.append(root);
 }
@@ -163,29 +170,16 @@ function seatPanel(state, theme, seat, ui) {
   panel.className = `player player-${seat === 2 ? 'left' : 'right'}`;
   const isActive = state.turn === seat || state.bidTurn === seat;
   const isLandlord = state.landlord === seat;
-  const avatarText = seat === 0 ? '🙂' : '🤖'; // 头像图加载失败时的兜底 emoji
+  const charId = seat === 0 ? 'player' : theme.aiCharacters?.[seat - 1] || 'laozhang';
 
-  const plate = document.createElement('div');
-  plate.className = 'player-plate' + (isActive ? ' active' : '');
-  const avatar = document.createElement('div');
-  avatar.className = 'player-avatar';
-  const avatarSrc = seat === 0 ? 'img/avatars/player.svg' : theme.aiAvatars?.[seat - 1];
-  const img = document.createElement('img');
-  img.className = 'player-avatar-img';
-  img.alt = '';
-  img.src = avatarSrc;
-  img.addEventListener('error', () => {
-    img.remove();
-    const span = document.createElement('span');
-    span.textContent = isLandlord ? '👑' : avatarText;
-    avatar.append(span);
-  });
-  avatar.append(img);
+  const stage = document.createElement('div');
+  stage.className = `char-stage${isActive ? ' active' : ''}`;
+  stage.innerHTML = characterSVG(charId, ui.emotions[seat] || 'idle');
   if (isLandlord) {
     const crown = document.createElement('div');
     crown.className = 'player-crown';
     crown.textContent = '👑';
-    avatar.append(crown);
+    stage.append(crown);
   }
   const meta = document.createElement('div');
   meta.className = 'player-meta';
@@ -196,8 +190,10 @@ function seatPanel(state, theme, seat, ui) {
   count.className = 'player-count';
   count.textContent = `剩 ${state.hands[seat].length} 张`;
   meta.append(name, count);
-  plate.append(avatar, meta);
-  panel.append(plate);
+  const plate = document.createElement('div');
+  plate.className = 'player-plate';
+  plate.append(meta);
+  panel.append(stage, plate);
   if (ui.lastPlays[seat]) {
     panel.append(playedEl(ui.lastPlays[seat]));
   }

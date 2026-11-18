@@ -7,6 +7,7 @@ import { renderTable } from './table.js';
 import { sfx } from '../audio.js';
 
 const delay = (rng) => 600 + Math.floor(rng() * 600);
+const PLAY_EMOTION_MS = 350;
 
 export function createGameController({
   container, level = 'normal', theme, store,
@@ -17,9 +18,11 @@ export function createGameController({
   let timer = null;
   let destroyed = false;
   let sessionBroken = false; // 强 AI 失败过一次后不再重试,本局降 normal
+  const emotionTimers = [];
   const ui = {
     selected: new Set(), eventText: '', errorText: '',
     lastPlays: {}, recorderVisible,
+    emotions: { 0: 'idle', 1: 'idle', 2: 'idle' },
     onBid: (v) => humanBid(v), onPass: () => humanPass(), onPlay: () => humanPlay(),
     onHint: () => humanHint(), onToggleCard: (id) => toggleCard(id),
     onToggleBgm: () => { ui.bgmOn = !ui.bgmOn; onToggleBgm(ui.bgmOn); render(); },
@@ -32,6 +35,31 @@ export function createGameController({
   function schedule(fn, ms) {
     clearTimeout(timer);
     timer = setTimeout(() => { if (!destroyed) fn(); }, ms);
+  }
+
+  // 表情状态机:idle/thinking/play/shocked/win/lose
+  function setEmotion(seat, emo, revertMs = 0) {
+    ui.emotions[seat] = emo;
+    render();
+    if (revertMs > 0) {
+      const t = setTimeout(() => {
+        if (destroyed) return;
+        ui.emotions[seat] = 'idle';
+        render();
+      }, revertMs);
+      emotionTimers.push(t);
+    }
+  }
+
+  function applyEmotionsForMove(seat, cards) {
+    if (cards.length === 0) return;
+    const c = genType(cards);
+    if (c.type === 'bomb' || c.type === 'rocket') {
+      for (let s = 0; s < 3; s++) setEmotion(s, 'shocked'); // 下一手出牌解除
+    } else {
+      setEmotion(seat, 'play', PLAY_EMOTION_MS);
+      for (let s = 0; s < 3; s++) if (s !== seat && ui.emotions[s] !== 'shocked') setEmotion(s, 'idle');
+    }
   }
 
   // 从 history 尾部重建「当前圈各座位最近出牌」:连续两过 → 清空
@@ -73,8 +101,8 @@ export function createGameController({
     if (destroyed) return;
     if (state.phase === 'settle') {
       store.clearGame();
-      render();
       const r = settle(state);
+      for (let s = 0; s < 3; s++) setEmotion(s, r.deltas[s] > 0 ? 'win' : 'lose');
       sfx(r.deltas[0] > 0 ? 'win' : 'lose');
       onSettle(r, state);
       return;
@@ -88,6 +116,7 @@ export function createGameController({
     if (state.phase === 'bid') {
       const seat = state.bidTurn;
       if (seat === 0) return; // 等人
+      setEmotion(seat, 'thinking');
       schedule(() => {
         const v = chooseBid(state, seat, { level: aiLevel(), rng });
         state = bid(state, seat, v, { rng });
@@ -95,11 +124,13 @@ export function createGameController({
           ? themeCopy(theme, 'pass', { name: seatName(seat) })
           : themeCopy(theme, 'bid', { name: seatName(seat), score: v });
         sfx(v === 0 ? 'pass' : 'bid');
+        setEmotion(seat, 'idle');
         afterChange();
       }, delay(rng));
     } else if (state.phase === 'play') {
       const seat = state.turn;
       if (seat === 0) return;
+      setEmotion(seat, 'thinking');
       schedule(async () => {
         const moves = legalMoves(state, seat);
         let cards;
@@ -116,6 +147,7 @@ export function createGameController({
         } else {
           cards = choosePlay(state, seat, { level: aiLevel(), rng });
         }
+        setEmotion(seat, 'idle');
         applyMove(seat, cards);
       }, delay(rng));
     }
@@ -134,6 +166,7 @@ export function createGameController({
       else if (c.type === 'bomb') sfx('bomb');
       else sfx('play');
     }
+    applyEmotionsForMove(seat, cards);
     afterChange();
   }
 
@@ -209,6 +242,7 @@ export function createGameController({
     ui.selected.clear();
     ui.errorText = '';
     ui.eventText = themeCopy(theme, 'deal');
+    ui.emotions = { 0: 'idle', 1: 'idle', 2: 'idle' };
     if (!initialState) sfx('deal');
     if (state.phase === 'settle') {
       render();
@@ -222,6 +256,7 @@ export function createGameController({
   function destroy() {
     destroyed = true;
     clearTimeout(timer);
+    for (const t of emotionTimers) clearTimeout(t);
   }
 
   return { start, destroy, getState: () => state };
