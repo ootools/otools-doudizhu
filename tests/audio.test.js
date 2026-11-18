@@ -1,15 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-function installAudioContext() {
-  const created = { intervals: new Map(), cleared: [], oscillators: [], gains: [], filters: [] };
+function installAudioContext({ initialState = 'running' } = {}) {
+  const created = { intervals: new Map(), cleared: [], oscillators: [], gains: [], filters: [], resumes: 0 };
   let nextInterval = 1;
   globalThis.window = {
     AudioContext: class {
       constructor() {
         this.currentTime = 10;
         this.sampleRate = 1000;
-        this.state = 'running';
+        this.state = initialState;
         this.destination = {};
       }
       createGain() {
@@ -50,7 +50,7 @@ function installAudioContext() {
       createBufferSource() {
         return { buffer: null, connect() { return this; }, start() {}, stop() {} };
       }
-      resume() { this.state = 'running'; return Promise.resolve(); }
+      resume() { this.state = 'running'; created.resumes += 1; return Promise.resolve(); }
     },
   };
   globalThis.setInterval = (fn, ms) => {
@@ -107,6 +107,16 @@ test('SFX enable state stays independent of BGM toggle', async () => {
   mod.setSfxEnabled(true);
   mod.sfx('bid');
   assert.ok(audio.oscillators.length > 0, 'enabling SFX should restore action sounds');
+});
+
+test('suspended context resumes once on enable and keeps a single scheduler', async () => {
+  const audio = installAudioContext({ initialState: 'suspended' });
+  const mod = await freshAudioModule();
+  mod.setBgmEnabled(true);
+  assert.ok(audio.resumes >= 1, 'enable must resume a suspended context');
+  assert.equal(audio.intervals.size, 1, 'resume must not duplicate the scheduler');
+  mod.setBgmEnabled(false);
+  assert.equal(audio.intervals.size, 0);
 });
 
 test('one BGM scheduler schedules notes at varied times within each bar', async () => {
